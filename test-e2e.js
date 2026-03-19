@@ -1,6 +1,6 @@
-// End-to-end smoke test: walks through all questions via HTTP API.
+// End-to-end smoke test: walks through the dynamic session via HTTP API.
 // Run with: node test-e2e.js
-// Requires server to be running on port 3000.
+// Requires server running on port 3000.
 
 const BASE = 'http://localhost:3000';
 
@@ -19,64 +19,43 @@ async function run() {
   // Create session
   const session = await post('/api/session', {});
   console.log('✓ Session created:', session.sessionId?.slice(0, 8) + '...');
-  console.log('  First question:', session.question?.id);
-
+  console.log('  First question type:', session.question?.type);
   if (!session.sessionId) throw new Error('No session ID');
-  if (session.question?.id !== 'R-initial') throw new Error(`Expected R-initial, got ${session.question?.id}`);
+  if (session.question?.type !== 'initial') throw new Error(`Expected initial question, got ${session.question?.type}`);
 
   const sid = session.sessionId;
-  let qId = 'R-initial';
   let stepCount = 0;
+  const MAX_STEPS = 40; // safety ceiling
 
-  // Walk through all questions
-  const ANSWERS = {
-    'R-initial': '고객 지원 티켓을 카테고리별로 분류하는 LLM 파이프라인입니다.',
-    'R-A1-goal': 'Classify/categorize content',
-    'R-A1-domain': 'Text / Natural Language',
-    'R-A1-io': 'Text in → Label/Category out',
-    'R-A2-scale': 'Small (< 1K items)',
-    'R-A2-constraints': 'No strong constraints',
-    'R-A2-priority': 'Accuracy first',
-    'R-A3-scope': 'Core processing pipeline',
-    'R-step3': 'Yes, proceed to research',
-    'P-A-approach': 'Approach A: Direct LLM Classification',
-    'P-B1-title': 'Yes, looks good',
-    'P-B1-scenarios': 'Scenarios look correct',
-    'P-B2-requirements': 'Requirements look correct',
-    'P-B2-priorities': 'Priorities are correct',
-    'P-B2-nongoals': 'Non-goals are correct',
-    'P-B3': 'Approved — proceed to Data phase',
-    'D-strategy': 'Fully synthetic',
-    'D-synthesis-strategy': 'Looks good',
-    'D-synthesis-schema': 'Schema looks correct',
-    'D-synthesis-distribution': 'Distribution is good',
-    'D-sample': 'Samples look great — generate full dataset',
-    'D-final': 'Approved — generate files',
-    'W-env': 'Ready — .env is configured',
-  };
+  // First answer: describe a pipeline (rich answer to trigger skip logic)
+  let res = await post('/api/message', {
+    sessionId: sid,
+    answer: '고객 지원 티켓을 카테고리별로 분류하는 시스템입니다. Text→Label 분류, 소규모(1K 미만), 정확도 우선, 기술 제약 없음.',
+  });
+  stepCount++;
+  console.log(`✓ Step ${stepCount}: initial → phase ${res.phase}, done=${res.done}, next type=${res.question?.type}`);
 
-  while (true) {
-    const answer = ANSWERS[qId] || 'Yes';
-    const res = await post('/api/message', { sessionId: sid, questionId: qId, answer });
+  // Walk through remaining questions
+  while (!res.done && stepCount < MAX_STEPS) {
+    const q = res.question;
+    // Pick first option for card, 'yes' for confirm, open text otherwise
+    let answer = 'yes';
+    if (q.type === 'card' && q.options?.length > 0) {
+      answer = q.options[0].label;
+    } else if (q.type === 'open') {
+      answer = '문제 없어요';
+    }
+
+    res = await post('/api/message', { sessionId: sid, answer });
     stepCount++;
-
-    if (res.done) {
-      console.log(`✓ Step ${stepCount}: ${qId} → DONE`);
-      console.log('\n✅ Simulation complete!');
-      console.log('Collected keys:', Object.keys(res.collected || {}).join(', '));
-      break;
-    }
-
-    if (!res.question) {
-      console.error('No next question in response:', res);
-      process.exit(1);
-    }
-
-    console.log(`✓ Step ${stepCount}: ${qId} → ${res.question.id} (phase ${res.phase})`);
-    qId = res.question.id;
+    console.log(`✓ Step ${stepCount}: phase ${res.phase}, done=${res.done}, next=${res.question?.header || 'done'}`);
   }
 
-  console.log(`\nTotal steps: ${stepCount}`);
+  if (!res.done) throw new Error(`Not done after ${MAX_STEPS} steps — possible infinite loop`);
+
+  console.log('\n✅ Simulation complete!');
+  console.log('Total steps:', stepCount);
+  console.log('Collected keys:', Object.keys(res.collected || {}).join(', '));
 }
 
 run().catch(err => { console.error('E2E test failed:', err.message); process.exit(1); });

@@ -4,74 +4,76 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MEGA Simulator</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    .landing {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 2rem;
+    }
+    .landing-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      letter-spacing: -0.02em;
+    }
+    .landing-subtitle {
+      color: #64748b;
+      font-size: 0.95rem;
+      margin-top: -1.5rem;
+    }
+    .landing-buttons {
+      display: flex;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .landing-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.35rem;
+      padding: 1.25rem 1.75rem;
+      border-radius: 12px;
+      border: 1px solid #1e293b;
+      background: #0f172a;
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.15s, background 0.15s;
+      min-width: 220px;
+    }
+    .landing-btn:hover {
+      border-color: #3b82f6;
+      background: #1e293b;
+    }
+    .landing-btn-label {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+    .landing-btn-desc {
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+  </style>
 </head>
 <body>
-
-<div id="app-header">
-  <span class="title">mega-simulator</span>
-  <span>·</span>
-  <span class="mode">SCAFFOLD Mode</span>
-  <span>·</span>
-  <span id="header-phase">Phase 0 of 4 — Research</span>
-</div>
-
-<div id="main">
-
-  <!-- Left Panel -->
-  <div id="left-panel">
-    <div>
-      <div class="panel-section-label">진행 상황</div>
-      <div id="phase-list">
-        <div class="phase-item active" data-phase="0">▶ Phase 0 · Research</div>
-        <div class="phase-item" data-phase="1">Phase 1 · PRD</div>
-        <div class="phase-item" data-phase="2">Phase 2 · Data</div>
-        <div class="phase-item" data-phase="3">Phase 3 · Workflow</div>
-      </div>
-    </div>
-
-    <div style="border-top:1px solid #21262d;padding-top:12px;">
-      <div class="panel-section-label">수집된 정보</div>
-      <div id="collected-list">
-        <!-- Populated by app.js -->
-      </div>
-    </div>
-
-    <div id="progress-section">
-      <div class="panel-section-label">질문 진행</div>
-      <div id="progress-bar-track"><div id="progress-bar-fill" style="width:0%"></div></div>
-      <div id="progress-label">0 / 22 완료</div>
+  <div class="landing">
+    <div class="landing-title">MEGA Simulator</div>
+    <div class="landing-subtitle">LLM 파이프라인 설계 시뮬레이터</div>
+    <div class="landing-buttons">
+      <a class="landing-btn" href="/flow">
+        <span class="landing-btn-label">플로우 보기</span>
+        <span class="landing-btn-desc">단계별 질문 흐름 및 수집 정보 확인</span>
+      </a>
+      <a class="landing-btn" href="/simulator">
+        <span class="landing-btn-label">시뮬레이터 사용하기</span>
+        <span class="landing-btn-desc">AI와 대화하며 파이프라인 설계</span>
+      </a>
     </div>
   </div>
-
-  <!-- Right Panel -->
-  <div id="right-panel">
-
-    <!-- Context bubble -->
-    <div id="context-bubble">
-      <div class="bot-label">🤖 MEGA</div>
-      <div id="context-text">안녕하세요! MEGA SCAFFOLD 시뮬레이터입니다. 시작하려면 잠시 기다려주세요...</div>
-    </div>
-
-    <!-- Question card (hidden until session starts) -->
-    <div id="question-card" style="display:none;">
-      <div class="question-meta">
-        <div class="question-header-label" id="question-header"></div>
-        <div id="hard-gate-badge" style="display:none;" class="hard-gate-badge">⚠️ HARD GATE</div>
-      </div>
-      <div class="question-text" id="question-text"></div>
-      <div id="options-container"></div>
-    </div>
-
-    <!-- Completion screen -->
-    <div id="completion-screen">
-      <div id="completion-content"></div>
-      <button class="restart-btn" onclick="restartSession()">🔄 다시 시작</button>
-    </div>
-
-  </div>
-</div>
-
-<script src="app.js"></script>
 </body>
 </html>

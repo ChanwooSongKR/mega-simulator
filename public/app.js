@@ -2,7 +2,6 @@
 let sessionId = null;
 let currentQuestion = null;
 let answeredCount = 0;
-const TOTAL_QUESTIONS = 22;
 
 // ── Boot ─────────────────────────────────────────────────────────────────────
 async function boot() {
@@ -29,18 +28,15 @@ async function api(method, path, body) {
 
 // ── Submit answer ─────────────────────────────────────────────────────────────
 async function submitAnswer(answer) {
-  if (!sessionId || !currentQuestion) return;
-  const qId = currentQuestion.id;
+  if (!sessionId) return;
   setContext('처리 중...', true);
   document.getElementById('question-card').style.display = 'none';
 
   try {
     const data = await api('POST', '/api/message', {
       sessionId,
-      questionId: qId,
       answer,
     });
-    answeredCount++;
     applyResponse(data);
   } catch (e) {
     setContext('오류가 발생했습니다. 다시 시도해주세요.', false);
@@ -60,7 +56,7 @@ function applyResponse(data) {
   setContext(data.context || '', false);
   currentQuestion = data.question;
   renderQuestion(data.question);
-  updateProgress();
+  updateProgress(data.phase);
 }
 
 // ── Render question ──────────────────────────────────────────────────────────
@@ -68,7 +64,7 @@ function renderQuestion(q) {
   const card = document.getElementById('question-card');
   card.style.display = '';
 
-  document.getElementById('question-header').textContent = `[${q.id}] ${q.header || ''}`;
+  document.getElementById('question-header').textContent = q.header || '';
   document.getElementById('question-text').textContent = q.question;
 
   const badge = document.getElementById('hard-gate-badge');
@@ -291,10 +287,12 @@ function updateLeftPanel(phase, collected) {
 }
 
 // ── Progress ──────────────────────────────────────────────────────────────────
-function updateProgress() {
-  const pct = Math.min((answeredCount / TOTAL_QUESTIONS) * 100, 100);
+function updateProgress(phase) {
+  const pct = Math.min(((phase || 0) / 4) * 100, 100);
   document.getElementById('progress-bar-fill').style.width = pct + '%';
-  document.getElementById('progress-label').textContent = `${answeredCount} / ${TOTAL_QUESTIONS} 완료`;
+  const phaseNames = ['Research', 'PRD', 'Data', 'Workflow'];
+  document.getElementById('progress-label').textContent =
+    phase !== undefined ? `Phase ${phase} — ${phaseNames[phase] || '완료'}` : 'Phase 0';
 }
 
 // ── Context bubble ────────────────────────────────────────────────────────────
@@ -338,8 +336,7 @@ function showCompletion(collected) {
 async function restartSession() {
   document.getElementById('completion-screen').classList.remove('visible');
   document.getElementById('question-card').style.display = 'none';
-  answeredCount = 0;
-  updateProgress();
+  updateProgress(0);
   updateLeftPanel(0, {});
   await boot();
 }

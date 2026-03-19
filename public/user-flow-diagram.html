@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MEGA User Flow Diagram</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      padding: 32px 24px;
+      min-width: 900px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 18px;
+      font-weight: 700;
+      color: #f0f6fc;
+      margin-bottom: 6px;
+      letter-spacing: -0.3px;
+    }
+
+    .subtitle {
+      text-align: center;
+      font-size: 12px;
+      color: #7d8590;
+      margin-bottom: 24px;
+    }
+
+    /* ─── Legend ─── */
+    .legend {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #9198a1;
+    }
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    /* ─── Mode tabs ─── */
+    .mode-tabs {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 28px;
+    }
+    .mode-tab {
+      padding: 7px 20px;
+      border-radius: 6px;
+      border: 1px solid #30363d;
+      background: #161b22;
+      color: #7d8590;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .mode-tab.active-scaffold { background: #1c2d4a; border-color: #388bfd; color: #79c0ff; }
+    .mode-tab.active-adapt   { background: #1a2e1a; border-color: #3fb950; color: #7ee787; }
+    .mode-panel { display: none; }
+    .mode-panel.visible { display: block; }
+
+    /* ─── Swimlane ─── */
+    .swimlane {
+      width: 100%;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .lane-headers {
+      display: grid;
+      grid-template-columns: 1fr 56px 1fr;
+      margin-bottom: 6px;
+      border-bottom: 1px solid #21262d;
+      padding-bottom: 8px;
+    }
+    .lane-h {
+      font-size: 11px;
+      font-weight: 700;
+      color: #7d8590;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .lane-h.right { text-align: right; }
+
+    /* ─── Phase section ─── */
+    .phase-block {
+      margin-bottom: 4px;
+    }
+    .phase-title-row {
+      display: grid;
+      grid-template-columns: 1fr 56px 1fr;
+      align-items: center;
+      margin: 12px 0 6px;
+    }
+    .phase-title {
+      grid-column: 2;
+      text-align: center;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      color: #f0f6fc;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 4px;
+      padding: 5px 4px;
+      line-height: 1.3;
+      white-space: nowrap;
+    }
+    .phase-divider {
+      border: none;
+      border-top: 1px dashed #1c2128;
+      margin: 12px 0 8px;
+    }
+
+    /* ─── Row ─── */
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 56px 1fr;
+      align-items: start;
+      gap: 0;
+      min-height: 44px;
+      margin-bottom: 5px;
+    }
+    .cell-user   { text-align: right; padding-right: 10px; }
+    .cell-system { text-align: left;  padding-left: 10px; }
+
+    /* vertical line in connector column */
+    .connector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 4px 0;
+    }
+    .connector::before {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0; left: 50%;
+      width: 1px;
+      background: #21262d;
+      transform: translateX(-50%);
+    }
+    .arrow {
+      position: relative; z-index: 1;
+      font-size: 14px;
+      background: #0d1117;
+      padding: 0 2px;
+    }
+    .arr-r  { color: #3fb950; }
+    .arr-l  { color: #388bfd; }
+    .arr-bi { color: #a371f7; }
+    .arr-loop { color: #a371f7; font-size: 16px; }
+
+    /* ─── Cards ─── */
+    .card {
+      display: inline-block;
+      border-radius: 6px;
+      padding: 7px 11px;
+      font-size: 11.5px;
+      line-height: 1.55;
+      max-width: 330px;
+      cursor: default;
+      position: relative;
+      vertical-align: top;
+      transition: box-shadow 0.15s;
+    }
+    .card:hover { box-shadow: 0 0 0 2px rgba(255,255,255,0.12); }
+
+    .c-question { background: #1c2d4a; border: 1px solid #388bfd; color: #a5c8ff; }
+    .c-gate     { background: #2d1517; border: 2px solid #f85149; color: #ffa198; }
+    .c-auto     { background: #17141d; border: 1px solid #6e40c9; color: #c8b1ff; }
+    .c-output   { background: #141f14; border: 1px solid #3fb950; color: #7ee787; }
+    .c-neutral  { background: #161b22; border: 1px solid #30363d; color: #7d8590; }
+    .c-trigger  { background: #1c2128; border: 1px solid #555d68; color: #cdd9e5; }
+    .c-skip     { background: #1c2128; border: 1px dashed #30363d; color: #555d68; font-style: italic; }
+
+    .badge {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 800;
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-right: 5px;
+      vertical-align: 1px;
+      letter-spacing: 0.3px;
+    }
+    .b-q    { background: #388bfd; color: #fff; }
+    .b-gate { background: #f85149; color: #fff; }
+    .b-auto { background: #6e40c9; color: #fff; }
+    .b-out  { background: #3fb950; color: #000; }
+    .b-skip { background: #30363d; color: #7d8590; }
+    .b-start{ background: #555d68; color: #fff; }
+
+    .qcount { font-weight: 700; }
+
+    /* ─── Tooltip ─── */
+    .tip {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 50%; transform: translateX(-50%);
+      background: #1c2128;
+      border: 1px solid #444c56;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 11px;
+      color: #cdd9e5;
+      white-space: nowrap;
+      z-index: 200;
+      pointer-events: none;
+      line-height: 1.7;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    }
+    .card:hover .tip { display: block; }
+
+    /* ─── Summary bar ─── */
+    .summary-bar {
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      margin: 20px auto 0;
+      max-width: 860px;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #161b22;
+    }
+    .summary-item {
+      flex: 1;
+      text-align: center;
+      padding: 12px 8px;
+      border-right: 1px solid #30363d;
+    }
+    .summary-item:last-child { border-right: none; }
+    .summary-val {
+      font-size: 22px;
+      font-weight: 700;
+      color: #79c0ff;
+      display: block;
+    }
+    .summary-val.red { color: #f85149; }
+    .summary-lbl {
+      font-size: 10px;
+      color: #7d8590;
+      margin-top: 3px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+
+<h1>MEGA — User Interaction Flow</h1>
+<p class="subtitle">사용자가 받는 질문 · 횟수 · 시스템 처리 흐름 / 호버하면 상세 정보 표시</p>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#388bfd"></div>사용자 질문</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#f85149; border:1px solid #f85149"></div>하드게이트 (필수 승인)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#6e40c9"></div>시스템 자동 처리</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3fb950"></div>출력 결과물</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#30363d; border:1px dashed #555"></div>스킵 가능</div>
+</div>
+
+<div class="mode-tabs">
+  <button class="mode-tab active-scaffold" onclick="showMode('scaffold', this)">SCAFFOLD 모드 — 새 파이프라인</button>
+  <button class="mode-tab" onclick="showMode('adapt', this)">ADAPT 모드 — 기존 코드 최적화</button>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCAFFOLD MODE
+══════════════════════════════════════════ -->
+<div id="panel-scaffold" class="mode-panel visible">
+<div class="swimlane">
+
+  <div class="lane-headers">
+    <div class="lane-h">👤 사용자</div>
+    <div></div>
+    <div class="lane-h right">🤖 MEGA 시스템</div>
+  </div>
+
+  <!-- ── 진입 ── -->
+  <div class="row">
+    <div class="cell-user">
+      <div class="card c-trigger">
+        <span class="badge b-start">START</span><code style="font-size:10.5px">mega: &lt;요청&gt;</code> 입력
+      </div>
+    </div>
+    <div class="connector"><span class="arrow arr-r">→</span></div>
+    <div class="cell-system">
+      <div class="card c-auto">
+        <span class="badge b-auto">AUTO</span>디렉토리 스캔 → 모드 결정
+        <div class="tip">
+          소스 파일(.py/.ts/.js) / 데이터 파일(.jsonl/.csv) 감지<br>
+          LLM 라이브러리, 진입점 함수, 프롬프트 상수, 메트릭 파싱<br>
+          → 소스 없음: SCAFFOLD / 소스 있음: ADAPT / .mega/ 있음: RESUME
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="phase-divider">
+
+  <!-- ══ Phase 0 ══ -->
+  <div class="phase-title-row">
+    <div></div>
+    <div class="phase-title">Phase 0<br>Research</div>
+    <div></div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user"></div>
+    <div class="connector"><span class="arrow arr-l">←</span></div>
+    <div class="cell-system">
+      <div class="card c-auto">
+        <span class="badge b-auto">AUTO</span>프로젝트 컨텍스트 사전 수집
+        <div class="tip">
+          package.json, README, 기존 파일 분석<br>
+          → 더 정확한 기본값/선택지 생성에 활용<br>
+          → 사용자 답변 예측 → 불필요한 질문 제거
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user">
+      <div class="card c-question">
+        <span class="badge b-q">Q</span><span class="qcount">[A1] 3개</span> — Goal / Domain / I/O<br>
+        <span style="font-size:10.5px; color:#7d8590;">획득: 시스템 목표, 도메인, 입출력 형식</span>
+        <div class="tip">
+          ① 목표: 분류 / 생성 / 추출 / 변환<br>
+          ② 도메인: 텍스트 / 코드 / 구조화 데이터 / 멀티모달<br>
+          ③ I/O: 텍스트→텍스트 / 텍스트→레이블 / 구조→구조<br>
+          ──────────────────────────<br>
+          → PRD 도메인, 연구 키워드, I/O Overview에 반영
+        </div>
+      </div>
+    </div>
+    <div class="connector"><span class="arrow arr-bi">⇄</span></div>
+    <div class="cell-system">
+      <div class="card c-skip">
+        <span class="badge b-skip">SKIP</span>요청에 Goal+Domain+I/O 모두 명시 시 스킵<br>
+        → Step 3(확인)으로 직행
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user">
+      <div class="card c-question">
+        <span class="badge b-q">Q</span><span class="qcount">[A2] 2-3개</span> — Scale / 제약 / 우선순위<br>
+        <span style="font-size:10.5px; color:#7d8590;">획득: 처리량, 기술 제약, 품질 기준</span>
+        <div class="tip">
+          ① Scale: 소(1K↓) / 중(1K~100K) / 대(100K+)<br>
+          ② 제약: 없음 / 언어·프레임워크 / API비용제한<br>
+          ③ 우선: 정확도 우선 / 속도 우선 / 비용 우선 / 균형<br>
+          ※ 코드: "Group A2 — Constraints (2-3 questions)"<br>
+          ──────────────────────────<br>
+          → PRD Constraints, Success Metrics 가중치에 반영
+        </div>
+      </div>
+    </div>
+    <div class="connector"><span class="arrow arr-bi">⇄</span></div>
+    <div class="cell-system">
+      <div class="card c-skip">
+        <span class="badge b-skip">SKIP</span>A1 스킵 시 문맥으로 유추 가능하면 함께 스킵
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user">
+      <div class="card c-question">
+        <span class="badge b-q">Q</span><span class="qcount">[A3] 1-2개</span> — v1 필수 기능 선택<br>
+        <span style="font-size:10.5px; color:#7d8590;">획득: Must-have 기능 목록 (다중선택) ※ 코드: "Group A3 — Scope (1-2 questions)"</span>
+        <div class="tip">
+          후보 기능 제시 (컨텍스트 기반 생성)<br>
+          → 사용자가 v1 범위 결정<br>
+          ──────────────────────────<br>
+          → PRD Must-Have 요구사항의 직접 기반
+        </div>
+      </div>
+    </div>
+    <div class="connector"><span class="arrow arr-bi">⇄</span></div>
+    <div class="cell-system">
+      <div class="card c-skip">
+        <span class="badge b-skip">SKIP</span>A1/A2 스킵 시 함께 스킵
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user">
+      <div class="card c-gate">
+        <span class="badge b-gate">⚠️ GATE</span><span class="qcount">[확인] 1개</span> — 의도 최종 확인<br>
+        <span style="font-size:10.5px; color:#ffa198;">절대 스킵 불가 · "아니요" 시 재시작</span>
+        <div class="tip">
+          파악한 의도 2~3문장으로 요약 후 확인<br>
+          "맞음" → 연구 시작<br>
+          "수정" → 특정 부분 재질문<br>
+          "다시" → Step 2 처음부터<br>
+          ──────────────────────────<br>
+          코드: "Step 3 (Confirmation) must never be skipped"
+        </div>
+      </div>
+    </div>
+    <div class="connector"><span class="arrow arr-r">→</span></div>
+    <div class="cell-system">
+      <div class="card c-auto">
+        <span class="badge b-auto">AUTO</span>병렬 웹 리서치 시작
+        <div class="tip">
+          도메인 방법론 / 최신 논문<br>
+          경쟁 제품 기능 비교 / Gap 분석<br>
+          벤치마크 성능 수치 수집<br>
+          규제·컴플라이언스 요구사항 검토
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user"></div>
+    <div class="connector"><span class="arrow arr-l">←</span></div>
+    <div class="cell-system">
+      <div class="card c-output">
+        <span class="badge b-out">OUT</span>.mega/research/report.md
+        <div class="tip">
+          섹션 1: 방법론/벤치마크<br>
+          섹션 2: 경쟁 분석/Gap/규제<br>
+          섹션 3.1: 권장 접근법 후보<br>
+          + 의도 요약, Q&A 기록
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="phase-divider">
+
+  <!-- ══ Phase 1 ══ -->
+  <div class="phase-title-row">
+    <div></div>
+    <div class="phase-title">Phase 1<br>PRD Agent</div>
+    <div></div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user">
+      <div class="card c-question">
+        <span class="badge b-q">Q</span><span class="qcount">[A-2] 1개</span> — 접근법 선택<br>
+        <span style="font-size:10.5px; color:#7d8590;">획득: 기술 방향 결정</span>
+        <div class="tip">
+          report.md 섹션 3.1 기반 2~3개 후보 제시<br>
+          각 200~300자 트레이드오프 설명 포함<br>
+          ──────────────────────────<br>
+          → PRD Description (Chosen Approach)<br>
+          ⏭ 후보 1개 시 자동 선택 후 스킵
+        </div>
+      </div>
+    </div>
+    <div class="connector"><span class="arrow arr-bi">⇄</span></div>
+    <div class="cell-system">
+      <div class="card c-auto">
+        <span class="badge b-auto">AUTO</span>I/O 스키마 일관성 검증
+        <div class="tip">
+          시나리오 간 입출력 구조 통일 여부 확인<br>
+          불일치 시 주요 그룹만 남기고 범위 축소<br>
+          → 제외된 시나리오는 B3에서 사용자에게 알림
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user">
+      <div class="card c-question">
+        <span class="badge b-q">Q</span><span class="qcount">[B1] 2개</span> — 제목·설명 + 시나리오<br>
+        <span style="font-size:10.5px; color:#7d8590;">획득: 프로젝트 제목, 타겟 유저, 시나리오</span>
+        <div class="tip">
+          ① 제목·설명이 프로젝트를 잘 표현하는지<br>
+          ② 주요 사용 시나리오와 타겟 유저가 맞는지<br>
+          ──────────────────────────<br>
+          → PRD Section 2: User Needs & Scenarios 확정
+        </div>
+      </div>
+    </div>
+    <div class="connector"><span class="arrow arr-bi">⇄</span></div>
+    <div class="cell-system"></div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user">
+      <div class="card c-question">
+        <span class="badge b-q">Q</span><span class="qcount">[B2] 3개</span> — 요구사항 + Non-goal<br>
+        <span style="font-size:10.5px; color:#7d8590;">획득: Must/Should/Could 요구사항, 범위 밖 항목</span>
+        <div class="tip">
+          ① Must-have (REQ-001~N) 측정 가능 기준 포함 확인<br>
+          ② Should/Could 우선순위 이동<br>
+          ③ Non-goal: 명시적 범위 경계<br>
+          ──────────────────────────<br>
+          → PRD Section 3: Requirements + Section 4: Non-Goals
+        </div>
+      </div>
+    </div>
+    <div class="connector"><span class="arrow arr-bi">⇄</span></div>
+    <div class="cell-system"></div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user">
+      <div class="card c-gate">
+        <span class="badge b-gate">⚠️ GATE</span><span class="qcount">[B3] 1개</span> — PRD 최종 승인<br>
+        <span style="font-size:10.5px; color:#ffa198;">절대 스킵 불가 · 거절 시 섹션 수정 후 재표시</span>
+        <div class="tip">
+          전체 PRD 요약 표시 후 최종 확인<br>
+          Success Metrics / I/O Overview는 자동 파생 (추가 확인 없음)<br>
+          ──────────────────────────<br>
+          코드: "Every phase transition needs explicit approval"
+        </div>
+      </div>
+    </div>
+    <div class="connector"><span class="arrow arr-r">→</span></div>
+    <div class="cell-system">
+      <div class="card c-output">
+        <span class="badge b-out">OUT</span>MEGA_AGENTOPT_{날짜}-{이름}.md
+        <div class="tip">7개 섹션: Description / User Needs &amp; Scenarios<br>Requirements / Non-Goals / Success Metrics<br>I/O Overview / Constraints &amp; Assumptions</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="phase-divider">
+
+  <!-- ══ Phase 2 ══ -->
+  <div class="phase-title-row">
+    <div></div>
+    <div class="phase-title">Phase 2<br>Data Agent</div>
+    <div></div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user">
+      <div class="card c-question">
+        <span class="badge b-q">Q</span><span class="qcount">[A.2] 1개</span> — 데이터 소싱 전략<br>
+        <span style="font-size:10.5px; color:#7d8590;">획득: 이후 전체 경로 결정</span>
+        <div class="tip">
+          ① 공개 데이터 우선 (Recommended) → Phase B 진행<br>
+          ② 완전 합성 → Phase B 스킵, Phase D 직행<br>
+          ③ 혼합 → Phase B + 합성 50% 이상<br>
+          ──────────────────────────<br>
+          → 선택에 따라 질문 수 3~7회로 분기
+        </div>
+      </div>
+    </div>
+    <div class="connector"><span class="arrow arr-bi">⇄</span></div>
+    <div class="cell-system">
+      <div class="card c-auto">
+        <span class="badge b-auto">AUTO</span>공개 데이터 병렬 탐색 (researcher 2명)
+        <div class="tip">
+          Kaggle / HuggingFace / GitHub / 학술 벤치마크<br>
+          각 결과: 크기, 포맷, 라이선스, PRD 커버리지, 샘플 3~5개<br>
+          ⏭ "완전 합성" 선택 시 이 단계 스킵
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user">
+      <div class="card c-question">
+        <span class="badge b-q">Q</span><span class="qcount">[C] 1개</span> — 데이터셋 선택<br>
+        <span style="font-size:10.5px; color:#7d8590;">획득: 사용할 공개 데이터 결정</span>
+        <div class="tip">
+          후보 표: 이름 / 크기 / PRD 커버리지% / 갭<br>
+          옵션: 단일 선택 / 여러 개 조합 / 합성으로 전환<br>
+          ──────────────────────────<br>
+          ⏭ "완전 합성" 전략이면 이 단계 스킵
+        </div>
+      </div>
+    </div>
+    <div class="connector"><span class="arrow arr-bi">⇄</span></div>
+    <div class="cell-system">
+      <div class="card c-skip">
+        <span class="badge b-skip">SKIP</span>"완전 합성" 시 Phase B/C 전체 스킵
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user">
+      <div class="card c-question">
+        <span class="badge b-q">Q</span><span class="qcount">[D-1] 1개</span> — 합성 전략 방향<br>
+        <span style="font-size:10.5px; color:#7d8590;">획득: 무엇을/왜 생성할지</span>
+        <div class="tip">
+          전체 합성 또는 갭 채우기 전략 설명<br>
+          → data_synthesis.md 섹션 1 확정<br>
+          ⏭ 합성 불필요 시 Phase D 전체 스킵
+        </div>
+      </div>
+    </div>
+    <div class="connector"><span class="arrow arr-bi">⇄</span></div>
+    <div class="cell-system"></div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user">
+      <div class="card c-question">
+        <span class="badge b-q">Q</span><span class="qcount">[D-2] 1개</span> — 데이터 스키마 확인<br>
+        <span style="font-size:10.5px; color:#7d8590;">획득: 입출력 필드 구조 승인</span>
+        <div class="tip">
+          입력 필드 + 출력 필드 + 예시 3개 제시<br>
+          → data_synthesis.md 섹션 2 확정<br>
+          → 이후 모든 생성의 기준이 됨
+        </div>
+      </div>
+    </div>
+    <div class="connector"><span class="arrow arr-bi">⇄</span></div>
+    <div class="cell-system"></div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user">
+      <div class="card c-question">
+        <span class="badge b-q">Q</span><span class="qcount">[D-3] 1개</span> — 난이도 분포 + 엣지 케이스<br>
+        <span style="font-size:10.5px; color:#7d8590;">획득: 생성 다양성 계획</span>
+        <div class="tip">
+          기본 분포: easy 40% / medium 40% / hard 20%<br>
+          포함할 엣지 케이스 목록 확인<br>
+          → Swarm 워커 배분 파라미터로 직접 사용
+        </div>
+      </div>
+    </div>
+    <div class="connector"><span class="arrow arr-bi">⇄</span></div>
+    <div class="cell-system"></div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user">
+      <div class="card c-gate">
+        <span class="badge b-gate">⚠️ GATE</span><span class="qcount">[D-4] 1개</span> — 샘플 5개 승인<br>
+        <span style="font-size:10.5px; color:#ffa198;">절대 스킵 불가 · 거절 시 재생성 후 반복</span>
+        <div class="tip">
+          모든 난이도 커버하는 5개 예시 제시<br>
+          "좋음" → 대량 생성 시작<br>
+          "조정 필요" → 재생성 + 이 질문 반복<br>
+          "방향 틀림" → D-1부터 재시작<br>
+          ──────────────────────────<br>
+          코드: "NEVER skip. NEVER auto-approve. NEVER assume approval."
+        </div>
+      </div>
+    </div>
+    <div class="connector"><span class="arrow arr-r">→</span></div>
+    <div class="cell-system">
+      <div class="card c-auto">
+        <span class="badge b-auto">AUTO</span>Swarm 병렬 생성
+        <div class="tip">
+          >30개: Haiku (N-1명) easy/medium + Sonnet (1명) hard<br>
+          SQLite 태스크 큐로 원자적 클레임<br>
+          ≤30개: 순차 생성<br>
+          → aggregate: 60% train / 40% val 분리
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user">
+      <div class="card c-question">
+        <span class="badge b-q">Q</span><span class="qcount">[E] 1개</span> — 데이터셋 최종 승인<br>
+        <span style="font-size:10.5px; color:#7d8590;">통계 + 샘플 확인 후 파일 생성 승인</span>
+        <div class="tip">
+          총 엔트리 수 / 소스 분류 / 난이도 분포 표시<br>
+          5개 랜덤 샘플 표시<br>
+          옵션: 승인 / 추가 생성 / 조정 / 처음부터
+        </div>
+      </div>
+    </div>
+    <div class="connector"><span class="arrow arr-r">→</span></div>
+    <div class="cell-system">
+      <div class="card c-output">
+        <span class="badge b-out">OUT</span>train.jsonl / val.jsonl / data-analysis.md
+      </div>
+    </div>
+  </div>
+
+  <hr class="phase-divider">
+
+  <!-- ══ Phase 3 ══ -->
+  <div class="phase-title-row">
+    <div></div>
+    <div class="phase-title">Phase 3<br>Workflow Agent</div>
+    <div></div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user"></div>
+    <div class="connector"><span class="arrow arr-l">←</span></div>
+    <div class="cell-system">
+      <div class="card c-auto">
+        <span class="badge b-auto">AUTO</span>병렬 연구 → 3개 후보 → 최적안 선택
+        <div class="tip">
+          논문 / 제품 / 구현 사례 병렬 조사<br>
+          테제-안티테제-종합으로 3개 후보 평가<br>
+          3-tier 코딩 에이전트로 병렬 구현<br>
+          → LLM 호출 모두 temperature=0 강제
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user">
+      <div class="card c-gate">
+        <span class="badge b-gate">⚠️ GATE</span><span class="qcount">1개</span> — .env API 키 확인<br>
+        <span style="font-size:10.5px; color:#ffa198;">평가 스크립트 실행 전 필수 · 거절 시 안내 후 재질문</span>
+        <div class="tip">
+          .env.example 자동 생성 (실제 키 없이 플레이스홀더만)<br>
+          사용자가 직접 .env 작성 후 확인<br>
+          "도움 필요" → 필요한 환경변수 목록 안내 후 재질문<br>
+          ──────────────────────────<br>
+          코드: "Only proceed AFTER user confirms"
+        </div>
+      </div>
+    </div>
+    <div class="connector"><span class="arrow arr-r">→</span></div>
+    <div class="cell-system">
+      <div class="card c-output">
+        <span class="badge b-out">OUT</span>workflow.py / evaluate.py / prompts/<br>
+        <span style="font-size:10px; color:#3d6b3d;">git init + iteration-0 커밋/태그</span>
+      </div>
+    </div>
+  </div>
+
+  <hr class="phase-divider">
+
+  <!-- ══ Phase 4 ══ -->
+  <div class="phase-title-row">
+    <div></div>
+    <div class="phase-title">Phase 4<br>Optimization</div>
+    <div></div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user">
+      <div class="card c-neutral" style="font-style:italic; color:#555d68;">
+        질문 없음 — 완전 자동
+      </div>
+    </div>
+    <div class="connector"></div>
+    <div class="cell-system">
+      <div class="card c-auto">
+        <span class="badge b-auto">AUTO</span>Iter 0: 6개 병렬 분석 에이전트
+        <div class="tip">
+          scientist ×2: 오류/성공 패턴 분석<br>
+          analyst ×2: ROI, 요구사항, 트레이드오프<br>
+          architect ×1: 아키텍처 평가<br>
+          → REDESIGN 신호 3개+ 시 전면 재설계
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user"></div>
+    <div class="connector"><span class="arrow arr-loop">↻</span></div>
+    <div class="cell-system">
+      <div class="card c-auto">
+        <span class="badge b-auto">LOOP</span>Iter 1~N: Delta 모드 반복
+        <div class="tip">
+          evaluate.py --data train → 같은 50개 샘플 (고정 시드)<br>
+          케이스별 개선/회귀 추적<br>
+          workflow-agent / prompt-engineer에 수정 위임<br>
+          git commit + iteration-N 태그<br>
+          ──────────────────────────<br>
+          종료 조건 (먼저 걸리는 것):<br>
+          • 최대 20회 반복<br>
+          • 최대 200만 토큰<br>
+          • targetAccuracy 달성<br>
+          • 2에폭 연속 정체
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="phase-divider">
+
+  <!-- ══ Phase 5 ══ -->
+  <div class="phase-title-row">
+    <div></div>
+    <div class="phase-title">Phase 5<br>Meta-Learning</div>
+    <div></div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user">
+      <div class="card c-neutral" style="font-style:italic; color:#555d68;">
+        질문 없음 — 완전 자동
+      </div>
+    </div>
+    <div class="connector"></div>
+    <div class="cell-system">
+      <div class="card c-output">
+        <span class="badge b-out">OUT</span>PatternDB + optimization-learnings.md
+        <div class="tip">
+          전체 피드백 이력 → 전략 효과성 분류<br>
+          (effective Δ>0.03 / marginal / ineffective / harmful)<br>
+          궤적 3-axis 임베딩 → FAISS 인덱스 갱신<br>
+          → 다음 프로젝트 wisdom 검색에 활용
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end swimlane -->
+
+<!-- Summary -->
+<div class="summary-bar">
+  <div class="summary-item">
+    <span class="summary-val">11회</span>
+    <div class="summary-lbl">최소 질문<br>(요청 명확·오픈데이터)</div>
+  </div>
+  <div class="summary-item">
+    <span class="summary-val">~17회</span>
+    <div class="summary-lbl">일반 경로<br>(혼합 전략)</div>
+  </div>
+  <div class="summary-item">
+    <span class="summary-val red">⚠️ 4회</span>
+    <div class="summary-lbl">하드게이트<br>(절대 불가)</div>
+  </div>
+  <div class="summary-item">
+    <span class="summary-val" style="color:#7ee787;">0회</span>
+    <div class="summary-lbl">Phase 4~5<br>(완전 자동)</div>
+  </div>
+</div>
+
+</div><!-- end panel-scaffold -->
+
+
+<!-- ══════════════════════════════════════════
+     ADAPT MODE
+══════════════════════════════════════════ -->
+<div id="panel-adapt" class="mode-panel">
+<div class="swimlane">
+
+  <div class="lane-headers">
+    <div class="lane-h">👤 사용자</div>
+    <div></div>
+    <div class="lane-h right">🤖 MEGA 시스템</div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user">
+      <div class="card c-trigger">
+        <span class="badge b-start">START</span><code style="font-size:10.5px">mega: &lt;경로&gt;</code> 입력
+      </div>
+    </div>
+    <div class="connector"><span class="arrow arr-r">→</span></div>
+    <div class="cell-system">
+      <div class="card c-auto">
+        <span class="badge b-auto">AUTO</span>소스 스캔 + .mega/ 사이드카 초기화
+        <div class="tip">
+          LLM 호출, 진입점 함수, 프롬프트 상수, 메트릭 파싱<br>
+          scan-result.json 저장<br>
+          optimization_git/ 복사<br>
+          git init + iteration-0 커밋/태그
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="phase-divider">
+
+  <div class="phase-title-row">
+    <div></div>
+    <div class="phase-title">Structuring<br>Phase</div>
+    <div></div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user"></div>
+    <div class="connector"><span class="arrow arr-l">←</span></div>
+    <div class="cell-system">
+      <div class="card c-auto">
+        <span class="badge b-auto">AUTO</span>소스 코드 심층 분석
+        <div class="tip">
+          ≤8 파일: 직접 순차 분석<br>
+          >8 파일: 병렬 explore-medium 에이전트<br>
+          → 노드별 타입 분류 (LLM vs Code)<br>
+          → 프롬프트 인벤토리, 데이터 로딩 방식<br>
+          → MEGA_AGENTOPT PRD 역방향 추출<br>
+          → temperature=0 강제 패치
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user">
+      <div class="card c-gate">
+        <span class="badge b-gate">⚠️ GATE</span><span class="qcount">1개</span> — .env API 키 확인<br>
+        <span style="font-size:10.5px; color:#ffa198;">evaluate.py 실행 전 필수</span>
+        <div class="tip">
+          "준비됨" → 평가 즉시 실행<br>
+          "도움 필요" → 환경변수 목록 안내 후 재질문
+        </div>
+      </div>
+    </div>
+    <div class="connector"><span class="arrow arr-r">→</span></div>
+    <div class="cell-system">
+      <div class="card c-auto">
+        <span class="badge b-auto">AUTO</span>v0 기준 평가 + targetAccuracy 보정
+        <div class="tip">
+          evaluate.py --data train → v0/summary.json<br>
+          evaluate.py --data val → v0_val/summary.json<br>
+          에러 분류 → ambitious_target 계산<br>
+          공식: max(theoretical_ceiling, v0+0.15)
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user"></div>
+    <div class="connector"><span class="arrow arr-l">←</span></div>
+    <div class="cell-system">
+      <div class="card c-output">
+        <span class="badge b-out">OUT</span>MEGA_AGENTOPT.md / load_data.py<br>
+        evaluate.py / workflow_diagram.md<br>
+        v0 평가 결과 (train + val)
+      </div>
+    </div>
+  </div>
+
+  <hr class="phase-divider">
+
+  <div class="phase-title-row">
+    <div></div>
+    <div class="phase-title">Phase 4~5<br>동일</div>
+    <div></div>
+  </div>
+
+  <div class="row">
+    <div class="cell-user">
+      <div class="card c-neutral" style="font-style:italic; color:#555d68;">
+        이후 질문 없음<br>SCAFFOLD Phase 4~5와 동일
+      </div>
+    </div>
+    <div class="connector"></div>
+    <div class="cell-system">
+      <div class="card c-output">
+        <span class="badge b-out">OUT</span>최적화 루프 → PatternDB 업데이트
+      </div>
+    </div>
+  </div>
+
+</div><!-- end swimlane -->
+
+<div class="summary-bar">
+  <div class="summary-item">
+    <span class="summary-val">1회</span>
+    <div class="summary-lbl">전체 질문 수<br>(.env 확인 1회)</div>
+  </div>
+  <div class="summary-item">
+    <span class="summary-val red">⚠️ 1회</span>
+    <div class="summary-lbl">하드게이트<br>(.env 확인)</div>
+  </div>
+  <div class="summary-item">
+    <span class="summary-val" style="color:#7ee787;">0회</span>
+    <div class="summary-lbl">Phase 4~5<br>(완전 자동)</div>
+  </div>
+</div>
+
+</div><!-- end panel-adapt -->
+
+<script>
+  function showMode(mode, btn) {
+    document.querySelectorAll('.mode-panel').forEach(p => p.classList.remove('visible'));
+    document.querySelectorAll('.mode-tab').forEach(b => b.className = 'mode-tab');
+    document.getElementById('panel-' + mode).classList.add('visible');
+    btn.className = 'mode-tab active-' + mode;
+  }
+</script>
+
+</body>
+</html>

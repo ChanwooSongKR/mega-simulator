@@ -3,49 +3,14 @@ require('dotenv').config(); // fallback: local .env
 
 const express = require('express');
 const path = require('path');
-const fs = require('fs');
-const { marked } = require('marked');
 const { createSession, getSession, advanceSession } = require('./session');
 
 const app = express();
 app.use(express.json());
 
-// ── /flow — render user-flow.md as HTML ──────────────────────────────────────
+// ── /flow — serve flow diagram HTML ──────────────────────────────────────────
 app.get('/flow', (req, res) => {
-  const mdPath = path.join(__dirname, '../docs/user-flow.md');
-  try {
-    const md = fs.readFileSync(mdPath, 'utf8');
-    const html = marked(md);
-    res.send(`<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MEGA User Flow</title>
-  <link rel="stylesheet" href="/style.css">
-  <style>
-    .flow-container { max-width: 860px; margin: 0 auto; padding: 2rem; }
-    .back-btn { display: inline-block; margin-bottom: 1.5rem; color: #888; text-decoration: none; font-size: 0.9rem; }
-    .back-btn:hover { color: #fff; }
-    .flow-container h1, .flow-container h2, .flow-container h3 { color: #e2e8f0; }
-    .flow-container table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
-    .flow-container th, .flow-container td { border: 1px solid #334155; padding: 0.5rem 0.75rem; text-align: left; font-size: 0.85rem; }
-    .flow-container th { background: #1e293b; color: #94a3b8; }
-    .flow-container code { background: #1e293b; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.85rem; }
-    .flow-container pre { background: #1e293b; padding: 1rem; border-radius: 8px; overflow-x: auto; }
-    .flow-container blockquote { border-left: 3px solid #334155; margin: 0; padding-left: 1rem; color: #94a3b8; }
-  </style>
-</head>
-<body>
-  <div class="flow-container">
-    <a class="back-btn" href="/">← 돌아가기</a>
-    ${html}
-  </div>
-</body>
-</html>`);
-  } catch (err) {
-    res.status(404).send('<p>Flow document not found.</p>');
-  }
+  res.sendFile(path.join(__dirname, 'public', 'user-flow-diagram.html'));
 });
 
 // ── /simulator — serve simulator SPA ─────────────────────────────────────────
@@ -136,5 +101,11 @@ app.get('/api/session/:id', (req, res) => {
   });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`MEGA Simulator running at http://localhost:${PORT}`));
+// Export for Vercel serverless (@vercel/node requires module.exports = app)
+module.exports = app;
+
+// Local dev: start server only when run directly
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => console.log(`MEGA Simulator running at http://localhost:${PORT}`));
+}

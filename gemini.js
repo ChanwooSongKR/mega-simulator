@@ -23,7 +23,7 @@ async function getContext(questionId, collected) {
     .map(([k, v]) => `${k}: ${v}`)
     .join(', ') || '없음';
 
-  const prompt = `당신은 MEGA 파이프라인 빌더 AI입니다. 사용자가 LLM 파이프라인을 설계하는 과정에서 대화를 이어가고 있습니다.
+  const prompt = `당신은 MEGA 시뮬레이터 AI입니다. 사용자가 만들고 싶은 프로젝트(앱, 시스템, 서비스 등)를 설계하는 과정에서 대화를 이어가고 있습니다.
 
 현재 질문 ID: ${questionId}
 지금까지 수집된 정보: ${collectedSummary}
@@ -48,7 +48,7 @@ async function detectSkips(initialText) {
   const model = getModel();
   if (!model) return { skip: [], reason: 'Gemini unavailable' };
 
-  const prompt = `사용자가 만들고 싶은 LLM 파이프라인을 다음과 같이 설명했습니다:
+  const prompt = `사용자가 만들고 싶은 것을 다음과 같이 설명했습니다:
 
 "${initialText}"
 
@@ -120,7 +120,7 @@ async function analyzeAndGenerate(phaseNum, collected, history, lastAnswer) {
     .map(h => `[${h.role}] ${h.content}`)
     .join('\n') || '(없음)';
 
-  const prompt = `당신은 MEGA 파이프라인 시뮬레이터의 질문 생성 엔진입니다.
+  const prompt = `당신은 MEGA 시뮬레이터의 질문 생성 엔진입니다. 사용자가 만들고 싶은 프로젝트(앱, 시스템, 서비스 등)에 대한 정보를 수집하고 있습니다.
 
 현재 Phase: ${phaseNum} (${schema.name})
 이 Phase에서 수집해야 할 필드: ${schema.fields.join(', ') || '(없음)'}

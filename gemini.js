@@ -95,4 +95,125 @@ function getFallbackContext(questionId) {
   return fallbacks[questionId] || '다음 단계로 진행할게요.';
 }
 
-module.exports = { getContext, detectSkips };
+// Analyzes the last answer, extracts field values, and generates the next question.
+// phaseNum: integer 0-3
+// collected: current collected fields object
+// history: full history array (will use last 10 entries internally)
+// lastAnswer: the most recent user answer string
+// Returns the question object, or a fallback if Gemini is unavailable.
+async function analyzeAndGenerate(phaseNum, collected, history, lastAnswer) {
+  const { getPhaseSchema, HARD_GATE_FIELD_NAMES } = require('./schema');
+  const schema = getPhaseSchema(phaseNum);
+  if (!schema) return getFallbackQuestion(phaseNum, collected, []);
+
+  const remainingFields = schema.fields.filter(f => !collected[f]);
+
+  const model = getModel();
+  if (!model) return getFallbackQuestion(phaseNum, collected, remainingFields);
+
+  const collectedSummary = Object.entries(collected)
+    .map(([k, v]) => `  ${k}: ${v}`)
+    .join('\n') || '  (없음)';
+
+  const recentHistory = history
+    .slice(-10)
+    .map(h => `[${h.role}] ${h.content}`)
+    .join('\n') || '(없음)';
+
+  const prompt = `당신은 MEGA 파이프라인 시뮬레이터의 질문 생성 엔진입니다.
+
+현재 Phase: ${phaseNum} (${schema.name})
+이 Phase에서 수집해야 할 필드: ${schema.fields.join(', ') || '(없음)'}
+아직 비어있는 필드: ${remainingFields.join(', ') || '(없음)'}
+
+지금까지 수집된 정보:
+${collectedSummary}
+
+최근 대화:
+${recentHistory}
+
+마지막 사용자 답변: "${lastAnswer}"
+
+━━━ 작업 ━━━
+1. 마지막 답변에서 아직 비어있는 필드에 해당하는 정보를 추출하세요.
+   - 이미 값이 있는 필드는 절대 덮어쓰지 마세요.
+2. 아직 비어있는 필드가 있으면 가장 중요한 하나에 대한 질문을 생성하세요.
+3. 모든 필드가 채워졌으면 fieldsComplete: true를 반환하고 question: ""으로 두세요.
+
+━━━ 절대 금지 ━━━
+다음 hard gate 필드에 대한 질문을 생성하지 마세요:
+${HARD_GATE_FIELD_NAMES.join(', ')}
+이 필드들은 서버가 직접 처리합니다.
+
+━━━ 응답 형식 ━━━
+아래 JSON만 반환하세요 (다른 텍스트 없이):
+{
+  "extractedFields": { "fieldName": "추출된 값" },
+  "remainingFields": ["아직 비어있는 필드명"],
+  "fieldsComplete": false,
+  "question": "다음 질문 텍스트 (fieldsComplete=true면 빈 문자열)",
+  "type": "card",
+  "header": "짧은 헤더 (2-4글자)",
+  "options": [
+    { "label": "선택지 레이블", "description": "설명", "recommended": false }
+  ],
+  "collectsTo": "이 질문이 채우는 필드명",
+  "contextMessage": "1-2문장의 한국어 전환 메시지"
+}
+
+type이 "open"이면 options는 빈 배열로 두세요.
+type은 반드시 "card" 또는 "open" 중 하나입니다.
+options는 card일 때 2-4개가 적당합니다.
+collectsTo는 반드시 remainingFields 중 하나여야 합니다.`;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const text = result.response.text().trim();
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return getFallbackQuestion(phaseNum, collected, remainingFields);
+
+    const parsed = JSON.parse(jsonMatch[0]);
+
+    // Server-side validation: collectsTo must be a known field
+    if (parsed.collectsTo && !schema.fields.includes(parsed.collectsTo)) {
+      parsed.collectsTo = null;
+    }
+
+    return parsed;
+  } catch (err) {
+    console.warn('[gemini] analyzeAndGenerate failed:', err.message);
+    return getFallbackQuestion(phaseNum, collected, remainingFields);
+  }
+}
+
+function getFallbackQuestion(phaseNum, collected, remainingFields) {
+  const { getPhaseSchema } = require('./schema');
+  const schema = getPhaseSchema(phaseNum);
+  const missing = remainingFields && remainingFields.length > 0
+    ? remainingFields
+    : (schema ? schema.fields.filter(f => !collected[f]) : []);
+
+  if (missing.length === 0) {
+    return { extractedFields: {}, remainingFields: [], fieldsComplete: true, question: '', type: 'open', options: [], collectsTo: null, contextMessage: '정보 수집이 완료됐습니다.' };
+  }
+
+  const fieldLabels = {
+    goal: '목표', domain: '도메인', io: '입출력 형식', scale: '처리 규모',
+    constraints: '기술 제약', priority: '품질 우선순위', scope: 'v1 필수 기능',
+    approach: '기술 접근법', dataStrategy: '데이터 전략',
+  };
+  const next = missing[0];
+  return {
+    extractedFields: {},
+    remainingFields: missing,
+    fieldsComplete: false,
+    question: `${fieldLabels[next] || next}에 대해 알려주세요.`,
+    type: 'open',
+    header: fieldLabels[next] || next,
+    options: [],
+    collectsTo: next,
+    contextMessage: 'Gemini를 사용할 수 없어 기본 질문을 표시합니다.',
+  };
+}
+
+module.exports = { getContext, detectSkips, analyzeAndGenerate };

@@ -4,7 +4,7 @@ let sessionHistory = []; // all Q&A entries with phase tags
 
 // ── Boot ─────────────────────────────────────────────────────────────────────
 async function boot() {
-  setContext('안녕하세요! MEGA SCAFFOLD 시뮬레이터입니다. 시작하는 중...', true);
+  setContext('안녕하세요! MEGA 시뮬레이터입니다. 시작하는 중...', true);
   try {
     const data = await api('POST', '/api/session');
     sessionId = data.sessionId;

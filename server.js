@@ -29,7 +29,7 @@ app.post('/api/session', (req, res) => {
   try {
     const session = createSession();
     const firstQuestion = {
-      question: '만들고 싶은 LLM 파이프라인을 자유롭게 설명해주세요.',
+      question: '어떤 걸 만들고 싶으세요? 자유롭게 설명해주세요.',
       type: 'initial',
       header: '시작',
       hardGate: false,

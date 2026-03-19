@@ -42,6 +42,7 @@ app.post('/api/session', (req, res) => {
       question: firstQuestion,
       phase: session.currentPhase,
       collected: session.collected,
+      sessionState: serializeSession(session),
     });
   } catch (err) {
     console.error('[POST /api/session]', err);
@@ -49,14 +50,38 @@ app.post('/api/session', (req, res) => {
   }
 });
 
+// ── Serialize / restore session state for stateless Vercel deployments ────────
+function serializeSession(session) {
+  return JSON.stringify({
+    currentPhase: session.currentPhase,
+    collected: session.collected,
+    history: session.history,
+    hardGatesPending: session.hardGatesPending,
+    currentHardGate: session.currentHardGate,
+  });
+}
+
+function restoreSession(sessionId, stateStr) {
+  try {
+    const state = JSON.parse(stateStr);
+    return { sessionId, ...state };
+  } catch {
+    return null;
+  }
+}
+
 // ── POST /api/message — Submit answer, get next question ─────────────────────
 app.post('/api/message', async (req, res) => {
-  const { sessionId, answer } = req.body;
+  const { sessionId, answer, sessionState } = req.body;
   if (!sessionId || answer === undefined) {
     return res.status(400).json({ error: 'Missing sessionId or answer' });
   }
 
-  const session = getSession(sessionId);
+  // Try in-memory first; fall back to client-sent state (survives Vercel cold starts)
+  let session = getSession(sessionId);
+  if (!session && sessionState) {
+    session = restoreSession(sessionId, sessionState);
+  }
   if (!session) return res.status(404).json({ error: 'Session not found' });
 
   // Store initial answer in collected immediately
@@ -82,6 +107,7 @@ app.post('/api/message', async (req, res) => {
       phase: session.currentPhase,
       collected: session.collected,
       history: session.history,
+      sessionState: serializeSession(session),
       done: false,
     });
   } catch (err) {

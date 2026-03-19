@@ -1,6 +1,7 @@
 // ── State ────────────────────────────────────────────────────────────────────
 let sessionId = null;
 let sessionHistory = []; // all Q&A entries with phase tags
+let sessionState = null; // full session state for Vercel cold-start recovery
 
 // ── Boot ─────────────────────────────────────────────────────────────────────
 async function boot() {
@@ -35,6 +36,7 @@ async function submitAnswer(answer) {
     const data = await api('POST', '/api/message', {
       sessionId,
       answer,
+      sessionState,
     });
     applyResponse(data);
   } catch (e) {
@@ -46,6 +48,7 @@ async function submitAnswer(answer) {
 // ── Apply server response ─────────────────────────────────────────────────────
 function applyResponse(data) {
   if (data.history) sessionHistory = data.history;
+  if (data.sessionState) sessionState = data.sessionState;
   updateLeftPanel(data.phase ?? 0, data.collected ?? {});
 
   if (data.done) {
@@ -341,6 +344,7 @@ function showCompletion(collected) {
 
 async function restartSession() {
   sessionHistory = [];
+  sessionState = null;
   document.getElementById('completion-screen').classList.remove('visible');
   document.getElementById('question-card').style.display = 'none';
   updateProgress(0);

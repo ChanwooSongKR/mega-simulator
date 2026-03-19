@@ -1,7 +1,5 @@
 // ── State ────────────────────────────────────────────────────────────────────
 let sessionId = null;
-let currentQuestion = null;
-let answeredCount = 0;
 
 // ── Boot ─────────────────────────────────────────────────────────────────────
 async function boot() {
@@ -54,7 +52,6 @@ function applyResponse(data) {
   }
 
   setContext(data.context || '', false);
-  currentQuestion = data.question;
   renderQuestion(data.question);
   updateProgress(data.phase);
 }

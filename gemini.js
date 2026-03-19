@@ -167,8 +167,11 @@ options는 card일 때 2-4개가 적당합니다.
 collectsTo는 반드시 remainingFields 중 하나여야 합니다.`;
 
   try {
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().trim();
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Gemini timeout')), 8000)
+    );
+    const geminiResult = await Promise.race([model.generateContent(prompt), timeout]);
+    const text = geminiResult.response.text().trim();
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return getFallbackQuestion(phaseNum, collected, remainingFields);
 

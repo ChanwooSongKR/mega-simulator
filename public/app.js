@@ -40,7 +40,7 @@ async function submitAnswer(answer) {
     });
     applyResponse(data);
   } catch (e) {
-    setContext('오류가 발생했습니다. 다시 시도해주세요.', false);
+    setContext(`오류: ${e.message} — 다시 시도해주세요.`, false);
     document.getElementById('question-card').style.display = '';
   }
 }

@@ -24,6 +24,56 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => res.json({ ok: true }));
 
+// ── Debug: end-to-end session test without Gemini ────────────────────────────
+app.get('/api/debug', async (req, res) => {
+  const report = {};
+  try {
+    // 1. Test module loads
+    const schema = require('./schema');
+    report.schema = 'ok — phases: ' + Object.keys(schema.PHASE_SCHEMA).join(',');
+
+    require('./gemini');
+    report.geminiModule = 'loaded';
+
+    const { createSession, advanceSession } = require('./session');
+    report.sessionModule = 'loaded';
+
+    // 2. Test session creation
+    const session = createSession();
+    report.sessionCreated = session.sessionId.slice(0, 8);
+
+    // 3. Test serializeSession
+    const state = serializeSession(session);
+    report.serializeSession = 'ok — length: ' + state.length;
+
+    // 4. Test restoreSession
+    const restored = restoreSession(session.sessionId, state);
+    report.restoreSession = restored ? 'ok' : 'FAILED';
+
+    // 5. Test advanceSession with mock (no Gemini)
+    const mockGenerate = async () => ({
+      extractedFields: { goal: 'test goal' },
+      remainingFields: ['domain'],
+      fieldsComplete: false,
+      question: '테스트 질문입니다.',
+      type: 'open',
+      header: '테스트',
+      options: [],
+      collectsTo: 'domain',
+      contextMessage: '테스트',
+    });
+    const result = await advanceSession(session, '테스트 답변', mockGenerate);
+    report.advanceSession = result.done ? 'done' : ('ok — type: ' + result.question?.type);
+
+    report.overall = 'ALL OK';
+  } catch (err) {
+    report.error = err.message;
+    report.stack = err.stack?.split('\n').slice(0, 5).join(' | ');
+    report.overall = 'FAILED';
+  }
+  res.json(report);
+});
+
 // ── POST /api/session — Create session, return first question ─────────────────
 app.post('/api/session', (req, res) => {
   try {

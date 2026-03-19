@@ -40,8 +40,11 @@ async function submitAnswer(answer) {
     });
     applyResponse(data);
   } catch (e) {
-    setContext(`오류: ${e.message} — 다시 시도해주세요.`, false);
+    const msg = `오류: ${e.message}`;
+    setContext(msg, false);
+    document.getElementById('context-bubble').style.borderColor = '#ef4444';
     document.getElementById('question-card').style.display = '';
+    console.error('[submitAnswer]', e);
   }
 }
 

@@ -1,5 +1,6 @@
 // ── State ────────────────────────────────────────────────────────────────────
 let sessionId = null;
+let sessionHistory = []; // all Q&A entries with phase tags
 
 // ── Boot ─────────────────────────────────────────────────────────────────────
 async function boot() {
@@ -44,6 +45,7 @@ async function submitAnswer(answer) {
 
 // ── Apply server response ─────────────────────────────────────────────────────
 function applyResponse(data) {
+  if (data.history) sessionHistory = data.history;
   updateLeftPanel(data.phase ?? 0, data.collected ?? {});
 
   if (data.done) {
@@ -262,8 +264,15 @@ function updateLeftPanel(phase, collected) {
   document.querySelectorAll('.phase-item').forEach(el => {
     const p = parseInt(el.dataset.phase);
     el.className = 'phase-item';
-    if (p < phase) el.classList.add('done');
-    else if (p === phase) el.classList.add('active');
+    if (p < phase) {
+      el.classList.add('done');
+      el.style.cursor = 'pointer';
+      el.onclick = () => openHistoryModal(p);
+    } else {
+      el.style.cursor = '';
+      el.onclick = null;
+      if (p === phase) el.classList.add('active');
+    }
   });
 
   // Update header
@@ -331,11 +340,47 @@ function showCompletion(collected) {
 }
 
 async function restartSession() {
+  sessionHistory = [];
   document.getElementById('completion-screen').classList.remove('visible');
   document.getElementById('question-card').style.display = 'none';
   updateProgress(0);
   updateLeftPanel(0, {});
   await boot();
+}
+
+// ── Phase history modal ───────────────────────────────────────────────────────
+const PHASE_NAMES = ['Research', 'PRD', 'Data', 'Workflow'];
+
+function openHistoryModal(phaseNum) {
+  const entries = sessionHistory.filter(e => e.phase === phaseNum);
+  if (entries.length === 0) return;
+
+  document.getElementById('history-modal-title').textContent =
+    `Phase ${phaseNum} — ${PHASE_NAMES[phaseNum]} 대화 기록`;
+
+  const body = document.getElementById('history-modal-body');
+  body.innerHTML = '';
+
+  // Pair questions with their following answers
+  for (let i = 0; i < entries.length; i++) {
+    const e = entries[i];
+    if (e.role === 'question' && e.content) {
+      const row = document.createElement('div');
+      row.className = 'history-row';
+      const answer = entries[i + 1]?.role === 'answer' ? entries[i + 1].content : null;
+      row.innerHTML = `
+        <div class="history-q">${e.content}</div>
+        ${answer ? `<div class="history-a">${answer}</div>` : ''}`;
+      body.appendChild(row);
+      if (answer) i++; // skip the answer entry
+    }
+  }
+
+  document.getElementById('history-modal-overlay').style.display = 'flex';
+}
+
+function closeHistoryModal() {
+  document.getElementById('history-modal-overlay').style.display = 'none';
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────

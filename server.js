@@ -81,6 +81,7 @@ app.post('/api/message', async (req, res) => {
       question: result.question,
       phase: session.currentPhase,
       collected: session.collected,
+      history: session.history,
       done: false,
     });
   } catch (err) {

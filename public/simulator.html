@@ -72,6 +72,15 @@
   </div>
 </div>
 
+<!-- Phase history modal -->
+<div id="history-modal-overlay" style="display:none;" onclick="closeHistoryModal()">
+  <div id="history-modal" onclick="event.stopPropagation()">
+    <div id="history-modal-title"></div>
+    <div id="history-modal-body"></div>
+    <button class="send-btn" onclick="closeHistoryModal()">닫기</button>
+  </div>
+</div>
+
 <script src="app.js"></script>
 </body>
 </html>

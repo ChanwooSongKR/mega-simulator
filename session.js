@@ -39,7 +39,7 @@ function mergeExtractedFields(collected, extracted) {
 // generateFn is injectable for testing (defaults to real Gemini call).
 async function advanceSession(session, answer, generateFn = analyzeAndGenerate) {
   // Store answer in history
-  session.history.push({ role: 'answer', content: answer, timestamp: Date.now() });
+  session.history.push({ role: 'answer', content: answer, phase: session.currentPhase, timestamp: Date.now() });
 
   // ── Step 1: Handle hard gate answer ──────────────────────────────────────
   if (session.currentHardGate) {
@@ -52,7 +52,7 @@ async function advanceSession(session, answer, generateFn = analyzeAndGenerate) 
 
       const result = await generateFn(session.currentPhase, session.collected, session.history, answer);
       mergeExtractedFields(session.collected, result.extractedFields);
-      session.history.push({ role: 'question', content: result.question, timestamp: Date.now() });
+      session.history.push({ role: 'question', phase: session.currentPhase, content: result.question, timestamp: Date.now() });
       return { question: result, done: false };
     }
 
@@ -77,14 +77,14 @@ async function advanceSession(session, answer, generateFn = analyzeAndGenerate) 
         const gateId = session.hardGatesPending[0];
         session.currentHardGate = gateId;
         const gateQ = HARD_GATE_QUESTIONS[gateId];
-        session.history.push({ role: 'question', content: gateQ.question, timestamp: Date.now() });
+        session.history.push({ role: 'question', phase: session.currentPhase, content: gateQ.question, timestamp: Date.now() });
         return { question: gateQ, done: false };
       }
 
       // First question of new phase
       const firstResult = await generateFn(session.currentPhase, session.collected, session.history, answer);
       mergeExtractedFields(session.collected, firstResult.extractedFields);
-      session.history.push({ role: 'question', content: firstResult.question, timestamp: Date.now() });
+      session.history.push({ role: 'question', phase: session.currentPhase, content: firstResult.question, timestamp: Date.now() });
       return { question: firstResult, done: false };
     }
   }
@@ -98,7 +98,7 @@ async function advanceSession(session, answer, generateFn = analyzeAndGenerate) 
     const gateId = session.hardGatesPending[0];
     session.currentHardGate = gateId;
     const gateQ = HARD_GATE_QUESTIONS[gateId];
-    session.history.push({ role: 'question', content: gateQ.question, timestamp: Date.now() });
+    session.history.push({ role: 'question', phase: session.currentPhase, content: gateQ.question, timestamp: Date.now() });
     return { question: gateQ, done: false };
   }
 
@@ -119,19 +119,19 @@ async function advanceSession(session, answer, generateFn = analyzeAndGenerate) 
       const gateId = session.hardGatesPending[0];
       session.currentHardGate = gateId;
       const gateQ = HARD_GATE_QUESTIONS[gateId];
-      session.history.push({ role: 'question', content: gateQ.question, timestamp: Date.now() });
+      session.history.push({ role: 'question', phase: session.currentPhase, content: gateQ.question, timestamp: Date.now() });
       return { question: gateQ, done: false };
     }
 
     // First question of new phase
     const firstResult = await generateFn(session.currentPhase, session.collected, session.history, answer);
     mergeExtractedFields(session.collected, firstResult.extractedFields);
-    session.history.push({ role: 'question', content: firstResult.question, timestamp: Date.now() });
+    session.history.push({ role: 'question', phase: session.currentPhase, content: firstResult.question, timestamp: Date.now() });
     return { question: firstResult, done: false };
   }
 
   // ── Step 5: Return next generated question ───────────────────────────────
-  session.history.push({ role: 'question', content: result.question, timestamp: Date.now() });
+  session.history.push({ role: 'question', phase: session.currentPhase, content: result.question, timestamp: Date.now() });
   return { question: result, done: false };
 }
 

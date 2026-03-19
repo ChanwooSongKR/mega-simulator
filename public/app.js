@@ -88,8 +88,8 @@ function renderQuestion(q) {
 function renderInitial(container) {
   container.innerHTML = `
     <div class="open-input-wrap">
-      <input id="initial-input" type="text" placeholder="파이프라인을 설명해주세요..." autofocus />
-      <button class="send-btn" id="initial-send" onclick="handleInitialSend()">시작 →</button>
+      <input id="initial-input" type="text" placeholder="만들고 싶은 것을 설명해주세요..." autofocus />
+      <button type="button" class="send-btn" id="initial-send" onclick="handleInitialSend()">시작 →</button>
     </div>`;
   const input = document.getElementById('initial-input');
   input.addEventListener('keydown', e => { if (e.key === 'Enter') handleInitialSend(); });
@@ -144,7 +144,7 @@ function renderCard(container, q) {
     <div class="other-expand" id="other-expand">
       <input id="other-input" type="text" placeholder="직접 입력..." />
       <div style="display:flex;justify-content:flex-end;">
-        <button class="send-btn" onclick="handleOtherSend()">전송</button>
+        <button type="button" class="send-btn" onclick="handleOtherSend()">전송</button>
       </div>
     </div>`;
   otherDiv.addEventListener('click', (e) => {
@@ -159,7 +159,7 @@ function renderCard(container, q) {
   if (isMulti) {
     const confirmDiv = document.createElement('div');
     confirmDiv.className = 'multiselect-confirm';
-    confirmDiv.innerHTML = `<button class="send-btn" onclick="handleMultiSend()">선택 완료</button>`;
+    confirmDiv.innerHTML = `<button type="button" class="send-btn" onclick="handleMultiSend()">선택 완료</button>`;
     container.appendChild(confirmDiv);
   }
 }
@@ -213,7 +213,7 @@ function renderConfirm(container, q) {
     <div class="expand-label">어떤 부분이 다른가요?</div>
     <input id="mostly-input" type="text" placeholder="수정 사항을 입력해주세요..." />
     <div style="display:flex;justify-content:flex-end;margin-top:8px;">
-      <button class="send-btn" onclick="handleMostlySend()">전송</button>
+      <button type="button" class="send-btn" onclick="handleMostlySend()">전송</button>
     </div>`;
   expand.querySelector('input').addEventListener('keydown', e => {
     if (e.key === 'Enter') handleMostlySend();
@@ -233,7 +233,7 @@ function renderOpen(container) {
   container.innerHTML = `
     <div class="open-input-wrap">
       <input id="open-input" type="text" placeholder="입력해주세요..." autofocus />
-      <button class="send-btn" onclick="handleOpenSend()">전송</button>
+      <button type="button" class="send-btn" onclick="handleOpenSend()">전송</button>
     </div>`;
   const input = document.getElementById('open-input');
   input.addEventListener('keydown', e => { if (e.key === 'Enter') handleOpenSend(); });

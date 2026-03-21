@@ -2,6 +2,48 @@ const crypto = require('crypto');
 const { getPhaseSchema, HARD_GATE_QUESTIONS } = require('./schema');
 const { analyzeAndGenerate } = require('./gemini');
 
+// Labels for collected field summaries (Korean)
+const FIELD_LABELS = {
+  goal: '목표',
+  domain: '도메인',
+  io: '입출력 형식',
+  scale: '규모',
+  constraints: '제약 조건',
+  priority: '우선순위',
+  scope: '범위',
+  approach: '접근 방식',
+  titleApproval: '제목',
+  scenariosApproval: '시나리오',
+  requirementsApproval: '요구사항',
+  prioritiesApproval: '우선순위',
+  nongoalsApproval: '비목표',
+  dataStrategy: '데이터 전략',
+  datasetChoice: '데이터셋',
+  synthesisStrategy: '합성 전략',
+  synthesisSchema: '스키마',
+  synthesisDistribution: '분포',
+};
+
+// Build a summary of collected fields for the current phase's hard gate.
+function buildPhaseSummary(phaseNum, collected) {
+  const schema = getPhaseSchema(phaseNum);
+  if (!schema) return null;
+
+  const lines = [];
+  for (const field of schema.fields) {
+    const val = collected[field];
+    if (val) {
+      const label = FIELD_LABELS[field] || field;
+      lines.push({ label, value: val });
+    }
+  }
+  // Include initialRequest for phase 0
+  if (phaseNum === 0 && collected.initialRequest) {
+    lines.unshift({ label: '초기 요청', value: collected.initialRequest });
+  }
+  return lines.length > 0 ? lines : null;
+}
+
 // In-memory store. Resets when server restarts.
 const sessions = new Map();
 
@@ -76,7 +118,7 @@ async function advanceSession(session, answer, generateFn = analyzeAndGenerate) 
       if (nextSchema.fields.length === 0) {
         const gateId = session.hardGatesPending[0];
         session.currentHardGate = gateId;
-        const gateQ = HARD_GATE_QUESTIONS[gateId];
+        const gateQ = buildGateQuestion(gateId, session.currentPhase, session.collected);
         session.history.push({ role: 'question', phase: session.currentPhase, content: gateQ.question, timestamp: Date.now() });
         return { question: gateQ, done: false };
       }
@@ -97,7 +139,7 @@ async function advanceSession(session, answer, generateFn = analyzeAndGenerate) 
   if (result.fieldsComplete && session.hardGatesPending.length > 0) {
     const gateId = session.hardGatesPending[0];
     session.currentHardGate = gateId;
-    const gateQ = HARD_GATE_QUESTIONS[gateId];
+    const gateQ = buildGateQuestion(gateId, session.currentPhase, session.collected);
     session.history.push({ role: 'question', phase: session.currentPhase, content: gateQ.question, timestamp: Date.now() });
     return { question: gateQ, done: false };
   }
@@ -118,7 +160,7 @@ async function advanceSession(session, answer, generateFn = analyzeAndGenerate) 
     if (nextSchema.fields.length === 0) {
       const gateId = session.hardGatesPending[0];
       session.currentHardGate = gateId;
-      const gateQ = HARD_GATE_QUESTIONS[gateId];
+      const gateQ = buildGateQuestion(gateId, session.currentPhase, session.collected);
       session.history.push({ role: 'question', phase: session.currentPhase, content: gateQ.question, timestamp: Date.now() });
       return { question: gateQ, done: false };
     }
@@ -133,6 +175,14 @@ async function advanceSession(session, answer, generateFn = analyzeAndGenerate) 
   // ── Step 5: Return next generated question ───────────────────────────────
   session.history.push({ role: 'question', phase: session.currentPhase, content: result.question, timestamp: Date.now() });
   return { question: result, done: false };
+}
+
+// Attach summary to a hard gate question object.
+function buildGateQuestion(gateId, phaseNum, collected) {
+  const gateQ = { ...HARD_GATE_QUESTIONS[gateId] };
+  const summary = buildPhaseSummary(phaseNum, collected);
+  if (summary) gateQ.summary = summary;
+  return gateQ;
 }
 
 module.exports = { createSession, getSession, deleteSession, advanceSession };

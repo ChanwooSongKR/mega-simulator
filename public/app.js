@@ -177,6 +177,19 @@ function handleMultiSend() {
 
 // ── Mode: confirm ─────────────────────────────────────────────────────────────
 function renderConfirm(container, q) {
+  // Render summary table if present (e.g., Research confirm shows collected fields)
+  if (q.summary && q.summary.length > 0) {
+    const summaryDiv = document.createElement('div');
+    summaryDiv.className = 'gate-summary';
+    summaryDiv.innerHTML = q.summary.map(item =>
+      `<div class="gate-summary-row">
+        <span class="gate-summary-label">${item.label}</span>
+        <span class="gate-summary-value">${item.value}</span>
+      </div>`
+    ).join('');
+    container.appendChild(summaryDiv);
+  }
+
   const opts = q.confirmOptions || [
     { label: '맞아요, 진행해주세요', value: 'yes' },
     { label: '거의 맞는데... (수정 사항 입력)', value: 'mostly' },

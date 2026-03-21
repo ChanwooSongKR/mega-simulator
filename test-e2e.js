@@ -2,7 +2,7 @@
 // Run with: node test-e2e.js
 // Requires server running on port 3000.
 
-const BASE = 'http://localhost:3000';
+const BASE = 'http://localhost:8888';
 
 async function post(path, body) {
   const res = await fetch(`${BASE}${path}`, {

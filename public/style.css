@@ -220,6 +220,38 @@ body {
   margin-bottom: 8px;
 }
 
+/* Gate summary (shown before confirm options) */
+.gate-summary {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gate-summary-row {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  line-height: 1.5;
+}
+.gate-summary-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #7d8590;
+  min-width: 80px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.gate-summary-value {
+  font-size: 13px;
+  color: #e6edf3;
+  word-break: break-word;
+}
+
 /* Confirm options */
 .confirm-options { display: flex; flex-direction: column; gap: 6px; }
 .confirm-opt {
